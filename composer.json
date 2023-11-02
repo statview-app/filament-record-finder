@@ -1,0 +1,28 @@
+{
+    "name": "statview/filament-record-finder",
+    "description": "Record finder form component for Filament",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Statview\\FilamentRecordFinder\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Sebastiaan Kloos",
+            "email": "sebastiaan@statview.app"
+        }
+    ],
+    "require": {
+        "illuminate/support": "^v10.0.0",
+        "filament/filament": "^v3.0.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Statview\\FilamentRecordFinder\\FilamentRecordFinderServiceProvider"
+            ]
+        }
+    }
+}
