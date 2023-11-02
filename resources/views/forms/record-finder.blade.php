@@ -1,6 +1,6 @@
 <x-dynamic-component
-        :component="$getFieldWrapperView()"
-        :field="$field"
+    :component="$getFieldWrapperView()"
+    :field="$field"
 >
     @php
         $addAction = $getAction('add');
@@ -9,11 +9,11 @@
     @endphp
 
     <div
-            x-data="{
+        x-data="{
             state: $wire.{{ $applyStateBindingModifiers("\$entangle('{$getStatePath()}')") }}
         }"
-            x-on:record-finder-attach-records.window="$wire.dispatchFormEvent('record-finder::addToState', '{{ $getStatePath() }}', $event.detail.recordIds)"
-            class="grid gap-3"
+        x-on:record-finder-attach-records.window="$wire.dispatchFormEvent('record-finder::addToState', '{{ $getStatePath() }}', $event.detail.recordIds)"
+        class="grid gap-3"
     >
         <div>
             <ul class="grid grid-cols-3 gap-3">
