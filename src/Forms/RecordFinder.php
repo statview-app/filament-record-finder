@@ -18,6 +18,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use function Livewire\store;
 
 class RecordFinder extends Field implements HasForms
 {
@@ -35,6 +36,12 @@ class RecordFinder extends Field implements HasForms
 
     public ?string $randomId = null;
 
+    public ?string $linkActionLabel = null;
+
+    public ?Closure $linkActionLink = null;
+
+    protected ?Closure $modifyRelationshipQueryUsing = null;
+
     protected function setUp(): void
     {
         $this->default([]);
@@ -50,6 +57,7 @@ class RecordFinder extends Field implements HasForms
         $this->registerActions([
             fn (RecordFinder $component): Action => $component->getAddAction(),
             fn (RecordFinder $component): Action => $component->getRemoveAction(),
+            fn (RecordFinder $component): Action => $component->getLinkAction(),
         ]);
 
         $this->registerListeners([
@@ -99,14 +107,24 @@ class RecordFinder extends Field implements HasForms
             ->iconButton()
             ->modalHeading('Record finder')
             ->modalContent(function (RecordFinder $component) {
+                $relationship = $component->getRelationship();
+
+                $query = $relationship->getModel()::whereNotIn('id', $component->getExistingRecordIds());
+
+                if ($this->modifyRelationshipQueryUsing) {
+                    $query = $this->evaluate($this->modifyRelationshipQueryUsing, [
+                        'query' => $query,
+                    ]) ?? $query;
+                }
+
+                store()->set("record-finder-{$component->getLivewire()->getId()}-columns", $component->getColumns());
+                store()->set("record-finder-{$component->getLivewire()->getId()}-query", $query);
+
                 return new HtmlString(
                     Blade::render(
-                        string: "@livewire('filament-record-finder::resource-table', ['modelClass' => \$modelClass, 'columns' => \$columns, 'recordFinderComponentId' => \$recordFinderComponentId, 'existingRecordIds' => \$existingRecordIds])",
+                        string: "@livewire('filament-record-finder::resource-table', ['recordFinderComponentId' => \$recordFinderComponentId])",
                         data: [
-                            'modelClass' => $component->getRelatedModelClass(),
-                            'columns' => ColumnsArray::make($component->getColumns()),
                             'recordFinderComponentId' => $component->getLivewire()->getId(),
-                            'existingRecordIds' => $component->getExistingRecordIds(),
                         ]
                     )
                 );
@@ -131,10 +149,28 @@ class RecordFinder extends Field implements HasForms
             });
     }
 
+    public function getLinkAction()
+    {
+        return Action::make('link')
+            ->label($this->linkActionLabel ?? 'Edit')
+            ->url(function (array $arguments, RecordFinder $component) {
+               $uuid = $arguments['item'];
+
+               $state = $component->getState()[$uuid]['id'];
+
+               return $this->evaluate($this->linkActionLink, [
+                   'state' => $state,
+               ]);
+            })
+            ->size('sm')
+            ->link();
+    }
+
     public function relationship(string $name, string | Closure | null $titleAttribute, ?Closure $modifyQueryUsing = null): static
     {
         $this->relationship = $name ?? $this->getName();
         $this->relationshipTitleAttribute = $titleAttribute;
+        $this->modifyRelationshipQueryUsing = $modifyQueryUsing;
 
         $this->loadStateFromRelationshipsUsing(static function (RecordFinder $component) {
             $component->clearCachedExistingRecords();
@@ -150,8 +186,6 @@ class RecordFinder extends Field implements HasForms
             $state = array_values(array_map(fn ($item) => $item['id'], $state));
 
             $relationship = $component->getRelationship();
-
-            ray($state);
 
             if ($relationship instanceof HasMany) {
                 $relationship->update([
@@ -249,5 +283,19 @@ class RecordFinder extends Field implements HasForms
     public function getRelationship(): HasOneOrMany | BelongsToMany | null
     {
         return $this->getModelInstance()->{$this->getRelationshipName()}();
+    }
+
+    public function linkActionLabel(string|null $linkActionLabel): static
+    {
+        $this->linkActionLabel = $linkActionLabel;
+
+        return $this;
+    }
+
+    public function linkActionLink(Closure $link): static
+    {
+        $this->linkActionLink = $link;
+
+        return $this;
     }
 }
