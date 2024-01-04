@@ -11,15 +11,31 @@
 
     <div
             x-data="{
-            state: $wire.{{ $applyStateBindingModifiers("\$entangle('{$getStatePath()}')") }}
-        }"
-            x-on:record-finder-attach-records.window="$wire.dispatchFormEvent('record-finder::addToState', '{{ $getStatePath() }}', $event.detail.recordIds)"
+                statePath: '{{ $getStatePath() }}',
+                state: $wire.{{ $applyStateBindingModifiers("\$entangle('{$getStatePath()}')") }},
+                handleAttachRecords($event) {
+                    if ($event.detail.statePath != this.statePath) {
+                        return;
+                    }
+
+                    $wire.dispatchFormEvent('record-finder::addToState', '{{ $getStatePath() }}', $event.detail.recordIds)
+                },
+            }"
+            x-on:record-finder-attach-records.window="($event) => handleAttachRecords($event)"
             class="grid gap-3"
     >
         <div>
-            <ul class="grid grid-cols-3 gap-3">
+            <x-filament::grid
+                    :default="$getGridColumns('default')"
+                    :sm="$getGridColumns('sm')"
+                    :md="$getGridColumns('md')"
+                    :lg="$getGridColumns('lg')"
+                    :xl="$getGridColumns('xl')"
+                    :two-xl="$getGridColumns('2xl')"
+                    class="gap-3"
+            >
                 @foreach($items as $uuid => $item)
-                    <li class="rounded-lg bg-white shadow border overflow-hidden">
+                    <div class="rounded-lg bg-white shadow border overflow-hidden">
                         <div class="flex justify-between p-3 bg-gray-50 border-b">
                             <span>{{ $removeAction(['item' => $uuid]) }}</span>
 
@@ -29,9 +45,9 @@
                         <div class="p-3">
                             <p>{{ $item['title'] }}</p>
                         </div>
-                    </li>
+                    </div>
                 @endforeach
-            </ul>
+            </x-filament::grid>
         </div>
 
         <div>

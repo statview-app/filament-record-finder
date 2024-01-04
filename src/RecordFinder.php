@@ -18,6 +18,8 @@ class RecordFinder extends Component implements HasTable, HasForms
         makeTable as makeBaseTable;
     }
 
+    public string $statePath;
+
     public Model $ownerRecord;
 
     public mixed $existingRecords;
@@ -32,14 +34,13 @@ class RecordFinder extends Component implements HasTable, HasForms
     public function makeTable(): Table
     {
         return $this->makeBaseTable()
-            ->query(fn ($query) => $query->whereNotIn('id', $this->existingRecords))
+            ->query(fn($query) => $query->whereNotIn('id', $this->existingRecords))
             ->bulkActions([
                 BulkAction::make('attach')
                     ->label('Koppelen')
-                    ->deselectRecordsAfterCompletion()
                     ->action(function (Component $livewire, $records) {
                         $livewire
-                            ->dispatch('record-finder-attach-records', recordIds: $records->pluck('id'));
+                            ->dispatch('record-finder-attach-records', recordIds: $records->pluck('id'), statePath: $this->statePath);
 
                         $livewire
                             ->dispatch('close-modal', id: $this->recordFinderComponentId . '-form-component-action');

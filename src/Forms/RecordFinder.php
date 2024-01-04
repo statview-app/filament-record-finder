@@ -6,7 +6,9 @@ use Closure;
 use App\Synths\Objects\ColumnsArray;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Concerns\CanGenerateUuids;
+use Filament\Forms\Components\Concerns\HasContainerGridLayout;
 use Filament\Forms\Components\Field;
+use Filament\Forms\Concerns\HasColumns;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -22,9 +24,9 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use function Livewire\store;
 
-class RecordFinder extends Field implements HasForms, HasTable
+class RecordFinder extends Field implements HasForms
 {
-    use InteractsWithForms, InteractsWithTable, CanGenerateUuids;
+    use InteractsWithForms, CanGenerateUuids, HasContainerGridLayout;
 
     protected string $view = 'filament-record-finder::record-finder';
 
@@ -96,13 +98,6 @@ class RecordFinder extends Field implements HasForms, HasTable
         $this->randomId = Str::random(6);
     }
 
-    public function table(Table $table): Table
-    {
-        return $table
-            ->query($this->getRelatedModelClass()::query())
-            ->columns($this->getColumns());
-    }
-
     public function getAddAction(): Action
     {
         return Action::make('add')
@@ -111,10 +106,15 @@ class RecordFinder extends Field implements HasForms, HasTable
             ->iconButton()
             ->modalHeading('Record finder')
             ->modalContent(function (RecordFinder $component) {
+                $recordFinderComponent = $component->getRecordFinder();
+
+                $componentName = str_replace('\\', '.', $recordFinderComponent);
+
                 return new HtmlString(
                     Blade::render(
-                        string: "@livewire('app.filament.record-finders.subpages-record-finder', ['ownerRecord' => \$ownerRecord, 'existingRecords' => \$existingRecords, 'recordFinderComponentId' => \$recordFinderComponentId])",
+                        string: "@livewire('{$componentName}', ['statePath' => \$statePath, 'ownerRecord' => \$ownerRecord, 'existingRecords' => \$existingRecords, 'recordFinderComponentId' => \$recordFinderComponentId])",
                         data: [
+                            'statePath' => $component->getStatePath(),
                             'ownerRecord' => $component->getRecord(),
                             'existingRecords' => collect($component->getState())->pluck('id')->toArray(),
                             'recordFinderComponentId' => $component->getLivewire()->getId(),
@@ -132,6 +132,7 @@ class RecordFinder extends Field implements HasForms, HasTable
             ->icon('heroicon-o-trash')
             ->color('danger')
             ->iconButton()
+            ->size('sm')
             ->action(function (array $arguments, RecordFinder $component) {
                 $items = $component->getState();
                 unset($items[$arguments['item']]);
@@ -297,5 +298,10 @@ class RecordFinder extends Field implements HasForms, HasTable
         $this->recordFinder = $recordFinder;
 
         return $this;
+    }
+
+    public function getRecordFinder(): string
+    {
+        return $this->recordFinder;
     }
 }
