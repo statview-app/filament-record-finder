@@ -182,14 +182,22 @@ class RecordFinder extends Field implements HasForms
             $relationship = $component->getRelationship();
 
             if ($relationship instanceof HasMany) {
-                $relationship->update([
-                    $relationship->getForeignKeyName() => null,
-                ]);
+                $items = $relationship->get();
 
-                $relationship->getModel()::whereIn($relationship->getLocalKeyName(), $state)
-                    ->update([
+                foreach ($items as $item) {
+                    $item->update([
+                        $relationship->getForeignKeyName() => null,
+                    ]);
+                }
+
+                $items = $relationship->getModel()::whereIn($relationship->getLocalKeyName(), $state)
+                    ->get();
+
+                foreach ($items as $item) {
+                    $item->update([
                         $relationship->getForeignKeyName() => $record->id,
                     ]);
+                }
             } else {
                 $relationship->sync($state);
             }
