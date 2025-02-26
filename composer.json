@@ -15,7 +15,7 @@
         }
     ],
     "require": {
-        "illuminate/support": "^v10.0.0",
+        "illuminate/support": "^10.0||^11.0",
         "filament/filament": "^v3.0.0",
         "spatie/php-structure-discoverer": "^2.0"
     },
